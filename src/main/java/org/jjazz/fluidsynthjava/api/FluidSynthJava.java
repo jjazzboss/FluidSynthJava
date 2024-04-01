@@ -978,7 +978,7 @@ public final class FluidSynthJava
                     error = true;
                     break;
                 }
-                String path = f.getAbsolutePath();
+                String path = f.getAbsolutePath(); 
                 try
                 {
                     LOGGER.log(Level.FINE, "loadNativeLibraries() loading {0}", path);
