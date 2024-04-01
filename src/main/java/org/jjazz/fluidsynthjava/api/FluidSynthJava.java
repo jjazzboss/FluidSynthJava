@@ -970,7 +970,7 @@ public final class FluidSynthJava
 
             for (String lib : libs)
             {
-                String modulePath = "modules/" + lib;
+                String modulePath = "modules/" + lib; 
                 File f = InstalledFileLocator.getDefault().locate(modulePath, "org.jjazzlab.org.jjazz.fluidsynthjava", false);
                 if (f == null)
                 {
