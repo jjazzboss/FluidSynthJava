@@ -1,8 +1,8 @@
 # FluidSynthJava
 
-This package lets you use FluidSynth directly from Java. The connection to the FluidSynth native library is based on JEP 412 "Foreign Function &amp; Memory API" + jextract from Java 17.
+This package lets you use the FluidSynth library directly from Java. The connection to the FluidSynth native library is based on the new JEP 412 "Foreign Function &amp; Memory API" + jextract from Java 17.
 
-The FluidSynthJava file provides Java API for a subset of the FluidSynth API, mainly the ones required to use FluidSynth as a software synth receiving Midi messages. 
+The FluidSynthJava file provides a Java API for a subset of the FluidSynth API, mainly the methods required to use FluidSynth as a software synth receiving Midi messages. 
 
 This package is used by the JJazzLab application.
 
