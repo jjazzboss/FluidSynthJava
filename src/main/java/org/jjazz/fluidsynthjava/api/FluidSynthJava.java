@@ -21,8 +21,12 @@ import com.google.common.base.Preconditions;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -35,8 +39,6 @@ import javax.sound.midi.SysexMessage;
 import jdk.incubator.foreign.*;
 import org.jjazz.fluidsynthjava.Utilities;
 import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.*;
-import org.openide.modules.InstalledFileLocator;
-import org.openide.util.NbPreferences;
 
 /**
  * A Java wrapper of a FluidSynth instance.
@@ -54,17 +56,17 @@ public final class FluidSynthJava
     // IMPORTANT: libs order must be in reverse dependency order (e.g. libfluidsynth is last)
     private static final String[] LIBS_WIN_AMD64 = new String[]
     {
-        "fluidsynth/win/amd64/libintl-8.dll",
-        "fluidsynth/win/amd64/libglib-2.0-0.dll",
-        "fluidsynth/win/amd64/libgthread-2.0-0.dll",
-        "fluidsynth/win/amd64/libgobject-2.0-0.dll",
-        "fluidsynth/win/amd64/libsndfile-1.dll",
-        "fluidsynth/win/amd64/libgcc_s_sjlj-1.dll",
-        "fluidsynth/win/amd64/libwinpthread-1.dll",
-        "fluidsynth/win/amd64/libgomp-1.dll",
-        "fluidsynth/win/amd64/libstdc++-6.dll",
-        "fluidsynth/win/amd64/libinstpatch-2.dll",
-        "fluidsynth/win/amd64/libfluidsynth-3.dll"
+        "libs/win/amd64/libintl-8.dll",
+        "libs/win/amd64/libglib-2.0-0.dll",
+        "libs/win/amd64/libgthread-2.0-0.dll",
+        "libs/win/amd64/libgobject-2.0-0.dll",
+        "libs/win/amd64/libsndfile-1.dll",
+        "libs/win/amd64/libgcc_s_sjlj-1.dll",
+        "libs/win/amd64/libwinpthread-1.dll",
+        "libs/win/amd64/libgomp-1.dll",
+        "libs/win/amd64/libstdc++-6.dll",
+        "libs/win/amd64/libinstpatch-2.dll",
+        "libs/win/amd64/libfluidsynth-3.dll"
     };
 
     private static final String[] LIBS_WIN_X86 = new String[]
@@ -96,7 +98,7 @@ public final class FluidSynthJava
     private Chorus chorus;
     private File lastLoadedSoundFontFile;
     private int lastLoadedSoundFontFileId = -1;
-    private static final Preferences prefs = NbPreferences.forModule(FluidSynthJava.class);
+    private static final Preferences prefs = Preferences.userRoot().node(FluidSynthJava.class.getName());
     private final transient PropertyChangeSupport pcs = new java.beans.PropertyChangeSupport(this);
 
     /**
@@ -950,50 +952,50 @@ public final class FluidSynthJava
 
     private static boolean loadNativeLibrariesWin()
     {
-        boolean error = false;
-
-        // System.loadLibrary("libfluidsynth-3.dll") does not work within IDE (.dll file not found, maybe it works if deployed), but in addition there is the problem
-        // of additional dependent dlls, which are loaded using native system => Need to manually load them in reverse dependence order.
-        // Use "cycheck -v ./xxx.dll" to get the DLL dependency tree.
         String[] libs = getWinFluidSynthLibs();
+
         if (libs.length == 0)
         {
-            LOGGER.log(Level.SEVERE, "loadNativeLibraries() No libs found for os={0} and arch={1}", new Object[]
+            LOGGER.log(Level.SEVERE, "loadNativeLibrariesWin() No libs found for os={0} and arch={1}", new Object[]
             {
                 System.getProperty("os.name"),
                 System.getProperty("os.arch")
             });
-            error = true;
+            return false;
+        }
 
-        } else
+        List<Path> libPaths;
+        try
         {
+            libPaths = extractWinLibsFromJar(libs); // Can't use InstalledFileLocator.getDefault() if we build a standard jar (would be easier with Netbeans nbm module and InstalledFileLocator API)
+            assert libPaths.size() == libs.length : "libPaths.size()=" + libPaths.size() + " lib.length=" + libs.length;
+        } catch (IOException ex)
+        {
+            LOGGER.log(Level.SEVERE, "loadNativeLibrariesWin() Error extracting native libs ex={0}", ex.getMessage());
+            return false;
+        }
 
-            for (String lib : libs)
+
+        // System.loadLibrary("libfluidsynth-3.dll") does not work within IDE (.dll file not found, maybe it works if deployed), but in addition there is the problem
+        // of additional dependent dlls, which are loaded using native system => Need to manually load them in reverse dependence order.
+        // Use "cycheck -v ./xxx.dll" to get the DLL dependency tree.
+        boolean error = false;
+        for (Path libPath : libPaths)
+        {
+            String strAbsPath = libPath.toAbsolutePath().toString();
+            try
             {
-                String modulePath = "modules/" + lib; 
-                File f = InstalledFileLocator.getDefault().locate(modulePath, "org.jjazzlab.org.jjazz.fluidsynthjava", false);
-                if (f == null)
+                LOGGER.log(Level.FINE, "loadNativeLibrariesWin() loading {0}", strAbsPath);
+                System.load(strAbsPath);
+            } catch (SecurityException | UnsatisfiedLinkError ex)
+            {
+                LOGGER.log(Level.SEVERE, "loadNativeLibrariesWin() Can''t load lib={0}. Ex={1}", new Object[]
                 {
-                    LOGGER.log(Level.SEVERE, "loadNativeLibraries() Can''t find lib from modulePath={0}", modulePath);
-                    error = true;
-                    break;
-                }
-                String path = f.getAbsolutePath(); 
-                try
-                {
-                    LOGGER.log(Level.FINE, "loadNativeLibraries() loading {0}", path);
-                    System.load(path);
-                } catch (SecurityException | UnsatisfiedLinkError ex)
-                {
-                    LOGGER.log(Level.SEVERE, "loadNativeLibraries() Can''t load lib={0}. Ex={1}", new Object[]
-                    {
-                        path, ex.getMessage()
-                    });
-                    error = true;
-                    break;
-                }
+                    strAbsPath, ex.getMessage()
+                });
+                error = true;
+                break;
             }
-
         }
         return !error;
     }
@@ -1033,6 +1035,71 @@ public final class FluidSynthJava
     private static List<String> getLinuxOrMacLibFilenames()
     {
         return Utilities.isMac() ? LIB_FILENAMES_MAC : LIB_FILENAMES_LINUX;
+    }
+
+    /**
+     * Extract the native libs into a temporary directory.
+     * <p>
+     * Needed because it's a jar package -with a nbm Netbeans package, which allows embedded files, we could use InstalledFileLocator instead (see JJazzLab &lt;= 4.0.2).
+     *
+     * @param resourceLibs Resource path of each bundled native lib
+     * @return The list of extracted files
+     * @throws java.io.IOException
+     */
+    private static List<Path> extractWinLibsFromJar(String[] resourceLibs) throws IOException
+    {
+        List<Path> res = new ArrayList<>();
+        int nbCopies = 0;
+
+
+        // Create temporary directory -always the same so it can be reused
+        Path tmpDir = Path.of(System.getProperty("java.io.tmpdir")).resolve("fluidsynthjava");
+        if (!Files.isDirectory(tmpDir))
+        {
+            Files.createDirectory(tmpDir);
+        }
+
+
+        // Extract each resource lib if required
+        for (String resourceLib : resourceLibs)
+        {
+            Path path = Path.of(resourceLib);
+            Path libName = path.getFileName();
+            Path tmpLibPath = tmpDir.resolve(libName);
+            LOGGER.log(Level.FINE, "extractWinLibsFromJar() resourceLib={0} tmpLibPath={1}", new Object[]
+            {
+                resourceLib, tmpLibPath
+            });
+
+            if (!Files.exists(tmpLibPath))
+            {
+
+                try (InputStream is = FluidSynthJava.class.getResourceAsStream(resourceLib))
+                {
+                    Files.copy(is, tmpLibPath, StandardCopyOption.REPLACE_EXISTING);
+                    nbCopies++;
+                } catch (IOException e)
+                {
+                    Files.deleteIfExists(tmpLibPath);
+                    throw e;
+                } catch (NullPointerException e)
+                {
+                    Files.deleteIfExists(tmpLibPath);
+                    throw new IOException("Resource lib " + resourceLib + " was not found inside JAR");
+                }
+
+            }
+
+
+            res.add(tmpLibPath);
+        }
+
+        LOGGER.log(Level.INFO, "extractWinLibsFromJar() Copied {0} native library files to {1}", new Object[]
+        {
+            nbCopies, tmpDir
+        });
+
+        return res;
     }
 
     static private boolean quietLoadOrLoadLibrary(String lib)

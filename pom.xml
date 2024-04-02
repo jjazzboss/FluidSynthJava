@@ -3,9 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.jjazzlab</groupId>    
     <artifactId>org-jjazz-fluidsynthjava</artifactId>
-    <version>1.0.0</version>
+    <version>4.0.3-SNAPSHOT</version>
     <name>FluidSynthJava</name>
-    <packaging>nbm</packaging>
+    <packaging>jar</packaging>
     
    
     <developers>
@@ -25,14 +25,11 @@
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>         
-        <netbeans.version>RELEASE210</netbeans.version>
         <jjazzlab.maven.compiler.plugin.version>3.11.0</jjazzlab.maven.compiler.plugin.version>
         <jjazzlab.compiler.release>17</jjazzlab.compiler.release>
         <jjazzlab.javac.fork>false</jjazzlab.javac.fork>
         <jjazzlab.javac.showDeprecation>true</jjazzlab.javac.showDeprecation>
         <jjazzlab.javac.showWarnings>true</jjazzlab.javac.showWarnings>
-        <!-- <jjazzlab.javac.xlint>-Xlint:all,-serial</jjazzlab.javac.xlint>  -->
-        <jjazzlab.javac.xlint></jjazzlab.javac.xlint>   <!-- temporary trick to avoid https://github.com/apache/netbeans/issues/6826  -->
         <jjazzlab.surefire.skipTests>true</jjazzlab.surefire.skipTests>
     </properties>
     
@@ -41,40 +38,8 @@
     
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.netbeans.utilities</groupId>
-                <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.8</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publicPackages>                      
-                        <publicPackage>org.jjazz.fluidsynthjava.api</publicPackage>
-                    </publicPackages>
-                    <nbmResources>
-                        <nbmResource>
-                            <directory>src/main/native</directory>
-                            <targetPath>modules/fluidsynth</targetPath>
-                            <includes>
-                                <include>**/*.dll</include>
-                                <include>**/*.so</include>
-                                <include>**/*.dylib</include>
-                                <include>*.txt</include>
-                            </includes>
-                        </nbmResource>     
-                    </nbmResources>               
-                </configuration>
-            </plugin>
-            
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>                                
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-            </plugin>
+                      
+
             
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -96,13 +61,10 @@
             
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.3</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin> 
-                    
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>                                
+            </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -134,16 +96,6 @@
 
     </build>
     <dependencies>      
-        <dependency> 
-            <groupId>org.netbeans.api</groupId> 
-            <artifactId>org-openide-modules</artifactId> 
-            <version>${netbeans.version}</version>  
-        </dependency>  
-        <dependency> 
-            <groupId>org.netbeans.api</groupId> 
-            <artifactId>org-openide-util</artifactId> 
-            <version>${netbeans.version}</version>  
-        </dependency>  
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
