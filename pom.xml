@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.jjazzlab</groupId>    
     <artifactId>org-jjazz-fluidsynthjava</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>FluidSynthJava</name>
     <packaging>jar</packaging>
     
@@ -39,8 +39,6 @@
     <build>
         <plugins>
                       
-
-            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
