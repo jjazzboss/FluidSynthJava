@@ -2,25 +2,37 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.jjazzlab</groupId>    
-    <artifactId>org-jjazz-fluidsynthjava</artifactId>
-    <version>1.0.0</version>
+    <artifactId>fluidsynthjava</artifactId>
+    <version>0.3.0</version>
     <name>FluidSynthJava</name>
     <packaging>jar</packaging>
     
    
+
+    <!-- project meta-data  -->
+    <url>https://github.com/jjazzboss/FluidSynthJava</url>
+    <description>A Java wrapper for the FluidSynth library</description>
+    <licenses>
+        <license>
+            <name>GNU LESSER GENERAL PUBLIC LICENSE Version 2.1</name>
+            <url>https://www.gnu.org/licenses/lgpl-2.1.en.html#license-text</url>
+        </license>
+    </licenses>      
     <developers>
         <developer>
             <id>jlelasseux</id>
             <name>Jerome Lelasseux</name>
-            <roles>
-                <role>developer</role>
-            </roles>
             <organization>JJazzLab</organization>
             <organizationUrl>https://www.jjazzlab.org</organizationUrl>            
             <email>jl@jjazzlab.org</email>
             <timezone>Europe/Paris</timezone>
         </developer>
-    </developers>
+    </developers>    
+    <scm>
+        <connection>scm:git:git://github.com/jjazzboss/FluidSynthJava.git</connection>
+        <developerConnection>scm:git:git@github.com:jjazzboss/FluidSynthJava.git</developerConnection>
+        <url>https://github.com/jjazzboss/FluidSynthJava</url>
+    </scm>          
     
     
     <properties>
@@ -32,73 +44,169 @@
         <jjazzlab.javac.showWarnings>true</jjazzlab.javac.showWarnings>
         <jjazzlab.surefire.skipTests>true</jjazzlab.surefire.skipTests>
     </properties>
-    
         
     
     
     <build>
-        <plugins>
+        <pluginManagement>
+            <plugins>
                       
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${jjazzlab.maven.compiler.plugin.version}</version>                
-                <configuration>
-                    <release>${jjazzlab.compiler.release}</release>                    
-                    <showDeprecation>${jjazzlab.javac.showDeprecation}</showDeprecation>
-                    <showWarnings>${jjazzlab.javac.showWarnings}</showWarnings>                        
-                    <fork>${jjazzlab.javac.fork}</fork>
-                    <enablePreview>true</enablePreview>
-                    <compilerArgs>
-                        <arg>-Xlint</arg>
-                        <arg>-Xlint:-serial</arg>
-                        <arg>--add-modules=jdk.incubator.foreign</arg>
-                    </compilerArgs>
-                </configuration>       
-            </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${jjazzlab.maven.compiler.plugin.version}</version>                
+                    <configuration>
+                        <release>${jjazzlab.compiler.release}</release>                    
+                        <showDeprecation>${jjazzlab.javac.showDeprecation}</showDeprecation>
+                        <showWarnings>${jjazzlab.javac.showWarnings}</showWarnings>                        
+                        <fork>${jjazzlab.javac.fork}</fork>
+                        <enablePreview>true</enablePreview>
+                        <compilerArgs>
+                            <arg>-Xlint</arg>
+                            <arg>-Xlint:-serial</arg>
+                            <arg>--add-modules=jdk.incubator.foreign</arg>
+                        </compilerArgs>
+                    </configuration>       
+                </plugin>
             
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>                                
-            </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.3.0</version>                                
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.6.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
+                </plugin>                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>3.2.4</version>
+                </plugin>              
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.4.0</version>
+                </plugin>                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>           
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>3.1.1</version>
+                </plugin>      
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.3.1</version>
+                </plugin>    
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <configuration>
+                        <skipTests>${jjazzlab.surefire.skipTests}</skipTests>
+                    </configuration>
+                </plugin>                        
+            </plugins>
+        </pluginManagement>
+        
+        
+        <plugins>              
             
+            <!-- Produce the final -javadoc.jar file from core dependencies -javadoc.jar files -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.5.0</version>
-            </plugin>           
-            
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>3.1.1</version>
-            </plugin>      
-            
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-            </plugin>    
-            
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.0</version>
-                <configuration>
-                    <skipTests>${jjazzlab.surefire.skipTests}</skipTests>
-                </configuration>
-            </plugin>        
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-javadoc-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>          
+                        <configuration>
+                            <sourceFileIncludes>
+                                <include>org/jjazz/**/api/**/*.java</include>
+                                <include>org/jjazz/**/spi/**/*.java</include>
+                            </sourceFileIncludes>                                                        
+                            <show>public</show>
+                            <nohelp>false</nohelp>
+                            <detectLinks>false</detectLinks>
+                            <detectOfflineLinks>true</detectOfflineLinks>   
+                            <quiet>false</quiet>
+                            <doclint>none</doclint>
+                            <release>${jjazzlab.compiler.release}</release>   
+                            <additionalOptions>--enable-preview --add-modules=jdk.incubator.foreign</additionalOptions>
+                            <doctitle>FluidSynthJava ${project.version} API Index</doctitle>
+                            <includeDependencySources>true</includeDependencySources>                                                
+                        </configuration>                                    
+                    </execution>
+                </executions>                                                            
+            </plugin>                      
                 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- GPG Signed Components -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <executable>c:/Program Files (x86)/GnuPG/bin/gpg.exe</executable>       
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                    <skipPublishing>true</skipPublishing>
+                </configuration>
+            </plugin>
+            
         </plugins>
-
+        
+        
     </build>
+    
+    
     <dependencies>      
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>32.0.0-jre</version>
-            <type>jar</type>
         </dependency>
     </dependencies>
 </project>
