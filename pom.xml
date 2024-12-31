@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.jjazzlab</groupId>    
     <artifactId>fluidsynthjava</artifactId>
-    <version>0.3.0</version>
+    <version>0.3.2</version>
     <name>FluidSynthJava</name>
     <packaging>jar</packaging>
     
@@ -38,7 +38,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>         
         <jjazzlab.maven.compiler.plugin.version>3.11.0</jjazzlab.maven.compiler.plugin.version>
-        <jjazzlab.compiler.release>17</jjazzlab.compiler.release>
+        <jjazzlab.compiler.release>23</jjazzlab.compiler.release>
         <jjazzlab.javac.fork>false</jjazzlab.javac.fork>
         <jjazzlab.javac.showDeprecation>true</jjazzlab.javac.showDeprecation>
         <jjazzlab.javac.showWarnings>true</jjazzlab.javac.showWarnings>
@@ -64,7 +64,6 @@
                         <compilerArgs>
                             <arg>-Xlint</arg>
                             <arg>-Xlint:-serial</arg>
-                            <arg>--add-modules=jdk.incubator.foreign</arg>
                         </compilerArgs>
                     </configuration>       
                 </plugin>
@@ -150,7 +149,7 @@
                             <quiet>false</quiet>
                             <doclint>none</doclint>
                             <release>${jjazzlab.compiler.release}</release>   
-                            <additionalOptions>--enable-preview --add-modules=jdk.incubator.foreign</additionalOptions>
+                            <additionalOptions></additionalOptions>
                             <doctitle>FluidSynthJava ${project.version} API Index</doctitle>
                             <includeDependencySources>true</includeDependencySources>                                                
                         </configuration>                                    
@@ -213,7 +212,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[17]</version>     
+                                    <version>22</version>     
                                 </requireJavaVersion>
                             </rules>    
                         </configuration>

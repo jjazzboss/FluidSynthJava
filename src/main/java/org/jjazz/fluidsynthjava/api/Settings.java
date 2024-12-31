@@ -24,17 +24,10 @@
  */
 package org.jjazz.fluidsynthjava.api;
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
-import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.FLUID_OK;
-import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.fluid_settings_copystr;
-import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.fluid_settings_getint;
-import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.fluid_settings_getnum;
-import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.fluid_settings_setint;
-import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.fluid_settings_setnum;
-import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.fluid_settings_setstr;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.*;
 
 /**
  * Settings of a FluidSynth instance.
@@ -42,11 +35,11 @@ import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.fluid_settings_sets
 public class Settings
 {
 
-    private final MemoryAddress fluid_settings_ma;
+    private final MemorySegment fluid_settings_ms;
 
-    public Settings(MemoryAddress fluid_settings_ma)
+    public Settings(MemorySegment fluid_settings_ms)
     {
-        this.fluid_settings_ma = fluid_settings_ma;
+        this.fluid_settings_ms = fluid_settings_ms;
     }
 
 
@@ -60,11 +53,11 @@ public class Settings
      */
     public boolean set(String setting, String value)
     {
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            var setting_seg = CLinker.toCString(setting, scope);
-            var value_seg = CLinker.toCString(value, scope);
-            return fluid_settings_setstr(fluid_settings_ma, setting_seg, value_seg) == FLUID_OK();
+            var setting_ms = arena.allocateFrom(setting);
+            var value_ms = arena.allocateFrom(value);
+            return fluid_settings_setstr(fluid_settings_ms, setting_ms, value_ms) == FLUID_OK();
         }
     }
 
@@ -77,10 +70,10 @@ public class Settings
      */
     public boolean set(String setting, double value)
     {
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            var setting_seg = CLinker.toCString(setting, scope);
-            return fluid_settings_setnum(fluid_settings_ma, setting_seg, value) == FLUID_OK();
+            var setting_ms = arena.allocateFrom(setting);
+            return fluid_settings_setnum(fluid_settings_ms, setting_ms, value) == FLUID_OK();
         }
     }
 
@@ -93,10 +86,10 @@ public class Settings
      */
     public boolean set(String setting, int value)
     {
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            var setting_seg = CLinker.toCString(setting, scope);
-            return fluid_settings_setint(fluid_settings_ma, setting_seg, value) == FLUID_OK();
+            var setting_ms = arena.allocateFrom(setting);
+            return fluid_settings_setint(fluid_settings_ms, setting_ms, value) == FLUID_OK();
         }
     }
 
@@ -108,12 +101,12 @@ public class Settings
      */
     public String getString(String setting)
     {
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            var setting_seg = CLinker.toCString(setting, scope);
-            var value_seg = SegmentAllocator.ofScope(scope).allocate(256);
-            fluid_settings_copystr(fluid_settings_ma, setting_seg, value_seg, 256);
-            return CLinker.toJavaString(value_seg);
+            var setting_ms = arena.allocateFrom(setting);
+            var value_ms = arena.allocate(256);
+            fluid_settings_copystr(fluid_settings_ms, setting_ms, value_ms, 256);
+            return value_ms.getString(0);
         }
     }
 
@@ -125,12 +118,12 @@ public class Settings
      */
     public int getInt(String setting)
     {
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            var setting_seg = CLinker.toCString(setting, scope);
-            var value_seg = SegmentAllocator.ofScope(scope).allocate(CLinker.C_INT, 0);
-            fluid_settings_getint(fluid_settings_ma, setting_seg, value_seg);
-            return value_seg.toIntArray()[0];
+            var setting_ms = arena.allocateFrom(setting);
+            var value_ms = arena.allocateFrom(C_INT, 0);
+            fluid_settings_getint(fluid_settings_ms, setting_ms, value_ms);
+            return value_ms.get(C_INT, 0);
         }
     }
 
@@ -142,12 +135,12 @@ public class Settings
      */
     public double getDouble(String setting)
     {
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            var setting_seg = CLinker.toCString(setting, scope);
-            var value_seg = SegmentAllocator.ofScope(scope).allocate(CLinker.C_DOUBLE, 0d);
-            fluid_settings_getnum(fluid_settings_ma, setting_seg, value_seg);
-            return value_seg.toDoubleArray()[0];
+            var setting_ms = arena.allocateFrom(setting);
+            var value_ms = arena.allocateFrom(C_DOUBLE, 0);
+            fluid_settings_getnum(fluid_settings_ms, setting_ms, value_ms);
+            return value_ms.get(C_DOUBLE, 0);
         }
     }
 

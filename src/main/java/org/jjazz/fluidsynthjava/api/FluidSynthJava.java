@@ -22,15 +22,16 @@ import com.google.common.base.Preconditions;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
-import jdk.incubator.foreign.*;
-import org.jjazz.fluidsynthjava.Utilities;
 import static org.jjazz.fluidsynthjava.jextract.fluidsynth_h.*;
+import org.jjazz.fluidsynthjava.Utilities;
 
 /**
  * A Java wrapper of a FluidSynth instance.
@@ -56,9 +57,9 @@ public final class FluidSynthJava
 
     private static final Logger LOGGER = Logger.getLogger(FluidSynthJava.class.getSimpleName());
 
-    private MemoryAddress fluid_settings_ma;
-    private MemoryAddress fluid_synth_ma;
-    private MemoryAddress fluid_driver_ma;
+    private MemorySegment fluid_settings_ms;
+    private MemorySegment fluid_synth_ms;
+    private MemorySegment fluid_driver_ms;
     private Settings settings;
     private Reverb reverb;
     private Chorus chorus;
@@ -102,10 +103,10 @@ public final class FluidSynthJava
     {
         Preconditions.checkArgument(fsj.isOpen());
 
-        fluid_settings_ma = new_fluid_settings();
-        settings = new Settings(fluid_settings_ma);
-        fluid_synth_ma = new_fluid_synth(fluid_settings_ma);
-        if (fluid_synth_ma == null)
+        fluid_settings_ms = new_fluid_settings();
+        settings = new Settings(fluid_settings_ms);
+        fluid_synth_ms = new_fluid_synth(fluid_settings_ms);
+        if (fluid_synth_ms == null)
         {
             throw new FluidSynthException("Can't create native FluidSynth instance");
         }
@@ -116,7 +117,7 @@ public final class FluidSynthJava
 
         if (createAudioDriver && fsj.getNativeAudioDriverInstance() != null)
         {
-            fluid_driver_ma = new_fluid_audio_driver(fluid_settings_ma, fluid_synth_ma);
+            fluid_driver_ms = new_fluid_audio_driver(fluid_settings_ms, fluid_synth_ms);
             // TODO copy driver settings! 
         }
 
@@ -162,10 +163,10 @@ public final class FluidSynthJava
             throw new FluidSynthException(msg);
         }
 
-        fluid_settings_ma = new_fluid_settings();
-        settings = new Settings(fluid_settings_ma);
-        fluid_synth_ma = new_fluid_synth(fluid_settings_ma);
-        if (fluid_synth_ma == null)
+        fluid_settings_ms = new_fluid_settings();
+        settings = new Settings(fluid_settings_ms);
+        fluid_synth_ms = new_fluid_synth(fluid_settings_ms);
+        if (fluid_synth_ms == null)
         {
             throw new FluidSynthException("Error creating native FluidSynth synth instance");
         }
@@ -174,8 +175,8 @@ public final class FluidSynthJava
 
         if (createAudioDriver)
         {
-            fluid_driver_ma = new_fluid_audio_driver(fluid_settings_ma, fluid_synth_ma);
-            if (fluid_driver_ma == null)
+            fluid_driver_ms = new_fluid_audio_driver(fluid_settings_ms, fluid_synth_ms);
+            if (fluid_driver_ms == null)
             {
                 close();
                 throw new FluidSynthException("Error creating native FluidSynth audio driver");
@@ -193,15 +194,15 @@ public final class FluidSynthJava
     public String getFluidSynthVersion()
     {
         int maj, min, mic;
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            var major_seg = SegmentAllocator.ofScope(scope).allocate(CLinker.C_INT, 0);
-            var minor_seg = SegmentAllocator.ofScope(scope).allocate(CLinker.C_INT, 0);
-            var micro_seg = SegmentAllocator.ofScope(scope).allocate(CLinker.C_INT, 0);
-            fluid_version(major_seg, minor_seg, micro_seg);
-            maj = major_seg.toIntArray()[0];
-            min = minor_seg.toIntArray()[0];
-            mic = micro_seg.toIntArray()[0];
+            var major_ms = arena.allocateFrom(C_INT, 0);
+            var minor_ms = arena.allocateFrom(C_INT, 0);
+            var micro_ms = arena.allocateFrom(C_INT, 0);
+            fluid_version(major_ms, minor_ms, micro_ms);
+            maj = major_ms.get(C_INT, 0);
+            min = minor_ms.get(C_INT, 0);
+            mic = micro_ms.get(C_INT, 0);
         }
         return maj + "." + min + "." + mic;
     }
@@ -250,7 +251,7 @@ public final class FluidSynthJava
      */
     public boolean isOpen()
     {
-        return fluid_synth_ma != null;
+        return fluid_synth_ms != null;
     }
 
     /**
@@ -258,38 +259,38 @@ public final class FluidSynthJava
      */
     public void close()
     {
-        if (fluid_driver_ma != null)
+        if (fluid_driver_ms != null)
         {
-            delete_fluid_audio_driver(fluid_driver_ma);
+            delete_fluid_audio_driver(fluid_driver_ms);
         }
-        if (fluid_synth_ma != null)
+        if (fluid_synth_ms != null)
         {
-            delete_fluid_synth(fluid_synth_ma);
+            delete_fluid_synth(fluid_synth_ms);
         }
-        if (fluid_settings_ma != null)
+        if (fluid_settings_ms != null)
         {
-            delete_fluid_settings(fluid_settings_ma);
+            delete_fluid_settings(fluid_settings_ms);
         }
-        fluid_driver_ma = fluid_synth_ma = fluid_settings_ma = null;
+        fluid_driver_ms = fluid_synth_ms = fluid_settings_ms = null;
         lastLoadedSoundFontFile = null;
         lastLoadedSoundFontFileId = -1;
 
         LOGGER.info("close() Native FluidSynth instance closed");
     }
 
-    public MemoryAddress getNativeFluidSynthInstance()
+    public MemorySegment getNativeFluidSynthInstance()
     {
-        return fluid_synth_ma;
+        return fluid_synth_ms;
     }
 
-    public MemoryAddress getNativeSettingsInstance()
+    public MemorySegment getNativeSettingsInstance()
     {
-        return fluid_settings_ma;
+        return fluid_settings_ms;
     }
 
-    public MemoryAddress getNativeAudioDriverInstance()
+    public MemorySegment getNativeAudioDriverInstance()
     {
-        return fluid_driver_ma;
+        return fluid_driver_ms;
     }
 
     public Settings getSettings()
@@ -333,28 +334,28 @@ public final class FluidSynthJava
                 int vel = sm.getData2();
                 if (vel > 0)
                 {
-                    fluid_synth_noteon(fluid_synth_ma, sm.getChannel(), sm.getData1(), vel);
+                    fluid_synth_noteon(fluid_synth_ms, sm.getChannel(), sm.getData1(), vel);
                 } else
                 {
-                    fluid_synth_noteoff(fluid_synth_ma, sm.getChannel(), sm.getData1());
+                    fluid_synth_noteoff(fluid_synth_ms, sm.getChannel(), sm.getData1());
                 }
             }
 
             case ShortMessage.NOTE_OFF ->
-                fluid_synth_noteoff(fluid_synth_ma, sm.getChannel(), sm.getData1());
+                fluid_synth_noteoff(fluid_synth_ms, sm.getChannel(), sm.getData1());
 
             case ShortMessage.PROGRAM_CHANGE ->
-                fluid_synth_program_change(fluid_synth_ma, sm.getChannel(), sm.getData1());
+                fluid_synth_program_change(fluid_synth_ms, sm.getChannel(), sm.getData1());
 
             case ShortMessage.CONTROL_CHANGE ->
-                fluid_synth_cc(fluid_synth_ma, sm.getChannel(), sm.getData1(), sm.getData2());
+                fluid_synth_cc(fluid_synth_ms, sm.getChannel(), sm.getData1(), sm.getData2());
 
             default ->
             {
                 int status = sm.getStatus();
                 if (status == ShortMessage.SYSTEM_RESET)
                 {
-                    fluid_synth_system_reset(fluid_synth_ma);
+                    fluid_synth_system_reset(fluid_synth_ms);
                 }
             }
         }
@@ -374,16 +375,15 @@ public final class FluidSynthJava
         // FluidSynth does not expect the leading 0xF0 nor the last 0xF7 
         byte[] fluidData = Arrays.copyOfRange(data, 0, data.length - 1);
 
-        try (var scope = ResourceScope.newConfinedScope())
+        try (var arena = Arena.ofConfined())
         {
-            SegmentAllocator allocator = SegmentAllocator.ofScope(scope);
-            var fluidData_ma = allocator.allocateArray(CLinker.C_CHAR, fluidData);
-            var handled_seg = SegmentAllocator.ofScope(scope).allocate(CLinker.C_INT, 0);
-            fluid_synth_sysex(fluid_synth_ma,
-                    fluidData_ma,
+            var fluidData_ms = arena.allocateFrom(C_CHAR, fluidData);
+            var handled_ms = arena.allocateFrom(C_INT, 0);
+            fluid_synth_sysex(fluid_synth_ms,
+                    fluidData_ms,
                     fluidData.length,
-                    MemoryAddress.NULL, MemoryAddress.NULL, handled_seg, 0);
-            int handled = handled_seg.toIntArray()[0];
+                    MemorySegment.NULL, MemorySegment.NULL, handled_ms, 0);
+            int handled = handled_ms.get(C_INT, 0);
         }
 
     }
@@ -399,7 +399,7 @@ public final class FluidSynthJava
         if (old != gain)
         {
             // Better to not call set_gain() if unchanged value, it seems it still impacts sound
-            fluid_synth_set_gain(fluid_synth_ma, gain);
+            fluid_synth_set_gain(fluid_synth_ms, gain);
             pcs.firePropertyChange(PROP_GAIN, old, gain);
         }
     }
@@ -411,7 +411,7 @@ public final class FluidSynthJava
      */
     public float getGain()
     {
-        return fluid_synth_get_gain(fluid_synth_ma);
+        return fluid_synth_get_gain(fluid_synth_ms);
     }
 
     /**
@@ -478,7 +478,7 @@ public final class FluidSynthJava
         b &= settings.set("synth.chorus.level", newChorus.level());
         b &= settings.set("synth.chorus.nr", newChorus.nr());
         b &= settings.set("synth.chorus.speed", newChorus.speed());
-        b &= (fluid_synth_set_chorus_group_type(fluid_synth_ma, -1, newChorus.type()) == FLUID_OK());
+        b &= (fluid_synth_set_chorus_group_type(fluid_synth_ms, -1, newChorus.type()) == FLUID_OK());
 
         chorus = newChorus;
         pcs.firePropertyChange(PROP_CHORUS, old, chorus);
@@ -504,12 +504,12 @@ public final class FluidSynthJava
         float level = (float) settings.getDouble("synth.chorus.level");
         int nr = settings.getInt("synth.chorus.nr");
         float speed = (float) settings.getDouble("synth.chorus.speed");
-        int type = 0;
-        try (var scope = ResourceScope.newConfinedScope())
+        int type;
+        try (var arena = Arena.ofConfined())
         {
-            var value_seg = SegmentAllocator.ofScope(scope).allocate(CLinker.C_INT, 0);
-            fluid_synth_get_chorus_group_type(fluid_synth_ma, -1, value_seg);
-            type = value_seg.toIntArray()[0];
+            var value_ms = arena.allocateFrom(C_INT, 0);
+            fluid_synth_get_chorus_group_type(fluid_synth_ms, -1, value_ms);
+            type = value_ms.get(C_INT, 0);
         }
         return new Chorus(null, nr, speed, depth, type, level);
     }
@@ -551,24 +551,25 @@ public final class FluidSynthJava
         check(synthCopy.getSettings().set("synth.lock-memory", 0), "Can't set synth.lock-memory");    // 1 by default                    
 
         // Prepare the player
-        MemoryAddress synth_ma = synthCopy.getNativeFluidSynthInstance();
-        MemoryAddress fluid_player_ma = new_fluid_player(synth_ma);
-        check(fluid_player_ma != null, "Can't create player");
-        try (var scope = ResourceScope.newConfinedScope())
+        MemorySegment synth_ms = synthCopy.getNativeFluidSynthInstance();
+        MemorySegment fluid_player_ms = new_fluid_player(synth_ms);
+        check(fluid_player_ms != null, "Can't create player");
+        try (var arena = Arena.ofConfined())
         {
-            var midiPath_seg = CLinker.toCString(midiFilePath, scope);
-            check(fluid_player_add(fluid_player_ma, midiPath_seg) == FLUID_OK(), "Can't set Midi file as player input");
+            // var midiPath_seg = CLinker.toCString(midiFilePath, arena);
+            var midiPath_ms = arena.allocateFrom(midiFilePath);
+            check(fluid_player_add(fluid_player_ms, midiPath_ms) == FLUID_OK(), "Can't set Midi file as player input");
         }
-        check(fluid_player_play(fluid_player_ma) == FLUID_OK(), "Can't start player");
+        check(fluid_player_play(fluid_player_ms) == FLUID_OK(), "Can't start player");
 
         // Render music to file using FluidSynth's own player
         boolean error = false;
-        MemoryAddress renderer_ma = new_fluid_file_renderer(synth_ma);
-        check(renderer_ma != null, "Can't create file renderer");
-        while (fluid_player_get_status(fluid_player_ma) == FLUID_PLAYER_PLAYING())
+        MemorySegment renderer_ms = new_fluid_file_renderer(synth_ms);
+        check(renderer_ms != null, "Can't create file renderer");
+        while (fluid_player_get_status(fluid_player_ms) == FLUID_PLAYER_PLAYING())
         {
             // LOGGER.severe(" - playing...");
-            if (fluid_file_renderer_process_block(renderer_ma) != FLUID_OK())
+            if (fluid_file_renderer_process_block(renderer_ms) != FLUID_OK())
             {
                 error = true;
                 break;
@@ -576,10 +577,10 @@ public final class FluidSynthJava
         }
 
         // just for sure: stop the playback explicitly and wait until finished
-        check(fluid_player_stop(fluid_player_ma) == FLUID_OK(), "Can't stop player");
-        check(fluid_player_join(fluid_player_ma) == FLUID_OK(), "Can't join player");
-        delete_fluid_file_renderer(renderer_ma);
-        delete_fluid_player(fluid_player_ma);
+        check(fluid_player_stop(fluid_player_ms) == FLUID_OK(), "Can't stop player");
+        check(fluid_player_join(fluid_player_ms) == FLUID_OK(), "Can't join player");
+        delete_fluid_file_renderer(renderer_ms);
+        delete_fluid_player(fluid_player_ms);
         synthCopy.close();
 
         if (error)
@@ -603,10 +604,14 @@ public final class FluidSynthJava
             throw new IllegalArgumentException("f=" + f);
         }
 
-        var sfont_path_native = CLinker.toCString(f.getAbsolutePath(), ResourceScope.newImplicitScope());
-        lastLoadedSoundFontFileId = fluid_synth_sfload(fluid_synth_ma,
-                sfont_path_native,
-                1); // 1: re-assign presets for all MIDI channels (equivalent to calling fluid_synth_program_reset())           
+        try (var arena = Arena.ofConfined())
+        {
+            var strPath = f.getAbsolutePath();
+            var sfont_path_ms = arena.allocateFrom(strPath);
+            lastLoadedSoundFontFileId = fluid_synth_sfload(fluid_synth_ms,
+                    sfont_path_ms,
+                    1); // 1: re-assign presets for all MIDI channels (equivalent to calling fluid_synth_program_reset())           
+        }
 
         if (lastLoadedSoundFontFileId == FLUID_FAILED())
         {
@@ -631,7 +636,7 @@ public final class FluidSynthJava
      */
     public void unloadSoundfont(int sfId) throws FluidSynthException
     {
-        if (fluid_synth_sfunload(fluid_synth_ma, sfId, 1) == FLUID_FAILED())
+        if (fluid_synth_sfunload(fluid_synth_ms, sfId, 1) == FLUID_FAILED())
         {
             String msg = "Unloading soundfont id=" + sfId + " failed";
             LOGGER.log(Level.SEVERE, "unloadSoundfont() {0}", msg);
@@ -649,7 +654,7 @@ public final class FluidSynthJava
         for (int i = 0; i < 12; i++)
         {
             int key = 60 + i;
-            fluid_synth_noteon(fluid_synth_ma, 0, key, 80);
+            fluid_synth_noteon(fluid_synth_ms, 0, key, 80);
             try
             {
                 Thread.sleep(500);
@@ -657,7 +662,7 @@ public final class FluidSynthJava
             {
                 Logger.getLogger(FluidSynthJava.class.getName()).log(Level.SEVERE, null, ex);
             }
-            fluid_synth_noteoff(fluid_synth_ma, 0, key);
+            fluid_synth_noteoff(fluid_synth_ms, 0, key);
         }
 
     }

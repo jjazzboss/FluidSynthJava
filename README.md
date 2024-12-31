@@ -5,7 +5,7 @@ This package lets you use the [FluidSynth library](https://www.fluidsynth.org/) 
 FluidSynthJava provides a Java API for a subset of the native FluidSynth API, mainly the methods required to configure FluidSynth (load soundfont, adjust reverb and chorus) and
 to send Midi messages to be rendered by FluidSynth. If you need more, it's not difficult to add new wrapper methods using the existing ones as model.
 
-The connection to the FluidSynth native library is based on the new [JEP 412](https://openjdk.org/jeps/412) "Foreign Function &amp; Memory API" + jextract tool from Java 17.
+The connection to the FluidSynth native library is based on the "Foreign Function &amp; Memory API" released in Java 22, therefore JDK 22 or later is required.
 
 This package is used by the [JJazzLab](https://github.com/jjazzboss/JJazzLab) application. 
 
@@ -25,12 +25,12 @@ For a simple example how to use FluidSynthJava, check out DemoApp in the [JJazzL
 <dependency>
     <groupId>org.jjazzlab</groupId>
     <artifactId>fluidsynthjava</artifactId>
-    <version>0.3.0</version>
+    <version>0.3.2</version>
 </dependency>
 ```
 ### With Gradle
 ```
-compile 'org.jjazzlab:fluidsynthjava:0.3.0'
+compile 'org.jjazzlab:fluidsynthjava:0.3.2'
 ```
 
 
