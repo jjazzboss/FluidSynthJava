@@ -4,7 +4,7 @@ We need to build fluidsynth to get the appropriate fluidsynth.h (+ other include
 
 - Download 2.3.7 fluidsynth source code and extract in FluidSynthJava top dir.
 
-- Build: see fluidsynth build instructions
+- Build fluidsynth: (check fluidsynth web site build instructions)
 sudo apt install cmake
 sudo apt install libglib2.0-0
 sudo apt install libdlib2.0-dev
@@ -36,3 +36,6 @@ static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.libraryLookup("libfluidsy
             .or(SymbolLookup.loaderLookup())
             .or(Linker.nativeLinker().defaultLookup());
 
+But in our case we manage the native library loading ourselves, so we use:
+    static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
+            .or(Linker.nativeLinker().defaultLookup());
