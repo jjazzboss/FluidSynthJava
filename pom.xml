@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.jjazzlab</groupId>    
     <artifactId>fluidsynthjava</artifactId>
-    <version>0.3.2</version>
+    <version>0.3.3-SNAPSHOT</version>
     <name>FluidSynthJava</name>
     <packaging>jar</packaging>
     
@@ -42,7 +42,7 @@
         <jjazzlab.javac.fork>false</jjazzlab.javac.fork>
         <jjazzlab.javac.showDeprecation>true</jjazzlab.javac.showDeprecation>
         <jjazzlab.javac.showWarnings>true</jjazzlab.javac.showWarnings>
-        <jjazzlab.surefire.skipTests>true</jjazzlab.surefire.skipTests>
+        <jjazzlab.surefire.skipTests>false</jjazzlab.surefire.skipTests>
     </properties>
         
     
@@ -232,6 +232,12 @@
             <artifactId>guava</artifactId>
             <version>32.0.0-jre</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>        
     </dependencies>
 </project>
 
